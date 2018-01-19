@@ -26,6 +26,16 @@ const encryptUserPW = (req, res, next) => {
   // TODO: Fill this middleware in with the Proper password encrypting, bcrypt.hash()
   // Once the password is encrypted using bcrypt you'll need to set a user obj on req.user with the encrypted PW
   // Once the user is set, call next and head back into the userController to save it to the DB
+  
+  bcrypt
+    .hash(password, SaltRounds)
+    .then( 
+      hash => {
+        req.user = {username, password:hash};
+        next();
+      }
+    )
+    .catch(err => res.status(422).send(err));
 };
 
 const compareUserPW = (req, res, next) => {
@@ -35,6 +45,17 @@ const compareUserPW = (req, res, next) => {
   // You'll need to find the user in your DB
   // Once you have the user, you'll need to pass the encrypted pw and the plaintext pw to the compare function
   // If the passwords match set the username on `req` ==> req.username = user.username; and call next();
+  User
+    .find({username:username})
+    .then( user => {
+      bcrypt
+        .compare(password, user.password, result => {
+          if(result) {
+            req.username = username;
+          }
+          next()})
+    })
+    .catch( err => res.status(422).send(err))
 };
 
 module.exports = {
